@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import com.example.polls.model.User;
+
 import java.util.Date;
 
 @Component
@@ -13,10 +16,10 @@ public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    @Value("${app.jwtSecret}")
+    @Value("JWTSuperSecretKey")
     private String jwtSecret;
 
-    @Value("${app.jwtExpirationInMs}")
+    @Value("604800000")
     private int jwtExpirationInMs;
 
     public String generateToken(Authentication authentication) {
@@ -25,12 +28,18 @@ public class JwtTokenProvider {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
+//        Claims claims = Jwts.claims().setSubject(userPrincipal.getUsername());
+//        claims.put("userId", userPrincipal.getId() + "");
+//        claims.put("role", userPrincipal.getName());
         return Jwts.builder()
                 .setSubject(Long.toString(userPrincipal.getId()))
+//                .setClaims(claims)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .claim("userId",  userPrincipal.getId())
+                .claim("userName", userPrincipal.getName())
+                
                 .compact();
     }
 
@@ -39,6 +48,12 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecret)
                 .parseClaimsJws(token)
                 .getBody();
+//        User u = new User();
+//        u.setUsername(claims.getSubject());
+//        u.setId(Long.parseLong((String) claims.get("userId")));
+////        u.setName((String) claims.get("role"));
+
+       
 
         return Long.parseLong(claims.getSubject());
     }
